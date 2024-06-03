@@ -1,0 +1,415 @@
+////////////TransactionController
+
+
+package com.examly.springapp.controller;
+
+import com.examly.springapp.model.Transaction;
+import com.examly.springapp.service.TransactionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/transactions")
+public class TransactionController {
+
+    @Autowired
+    private TransactionService transactionService;
+
+    @PostMapping("/user/{userId}")
+    public ResponseEntity<Transaction> createTransactionForUser(@PathVariable("userId") int userId, @RequestBody Transaction transaction) {
+        Transaction createdTransaction = transactionService.createTransactionForUser(userId, transaction);
+        return new ResponseEntity<>(createdTransaction, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Transaction> getTransactionById(@PathVariable("id") int id) {
+        Transaction transaction = transactionService.getTransactionById(id);
+        if (transaction == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(transaction, HttpStatus.OK);
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<Transaction>> getTransactionsByUserId(@PathVariable("userId") int userId) {
+        List<Transaction> transactions = transactionService.getTransactionsByUserId(userId);
+        if (transactions == null || transactions.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(transactions, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Transaction> updateTransaction(@PathVariable("id") int id, @RequestBody Transaction transaction) {
+        Transaction updatedTransaction = transactionService.updateTransaction(id, transaction);
+        if (updatedTransaction == null) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(updatedTransaction, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteTransaction(@PathVariable("id") int id) {
+        boolean deleted = transactionService.deleteTransaction(id);
+        if (!deleted) {
+            return new ResponseEntity<>("Transaction not found with ID: " + id, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>("Transaction deleted successfully", HttpStatus.OK);
+    }
+}
+
+
+
+/////////////UserController
+
+
+package com.examly.springapp.controller;
+
+import com.examly.springapp.model.User;
+import com.examly.springapp.service.UserService;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User createdUser = userService.createUser(user);
+        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable("id") int id) {
+        Optional<User> userOptional = userService.getUserById(id);
+    if (userOptional.isPresent()) {
+        User user = userOptional.get();
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    } else {
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable("id") int id, @RequestBody User user) {
+        User updatedUser = userService.updateUser(id, user);
+        if (updatedUser == null) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable("id") int id) {
+        boolean deleted = userService.deleteUser(id);
+        if (!deleted) {
+            return new ResponseEntity<>("User not found with ID: " + id, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
+    }
+}
+
+
+
+////////////////Transaction
+
+
+
+package com.examly.springapp.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
+
+@Entity
+public class Transaction {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String type;
+    private double amount;
+    private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
+
+    public Transaction() {
+    }
+
+    public Transaction(String type, double amount, String description) {
+        this.type = type;
+        this.amount = amount;
+        this.description = description;
+    }
+
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+}
+
+
+
+///////////User
+
+
+package com.examly.springapp.model;
+
+
+import javax.persistence.*;
+import java.util.List;
+
+@Entity
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String username;
+    private String email;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Transaction> transactions;
+
+    public User() {
+    }
+
+    public User(String username, String email) {
+        this.username = username;
+        this.email = email;
+    }
+
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions;
+    }
+}
+
+
+
+////////////TransactionRepo
+
+
+
+package com.examly.springapp.repository;
+
+import com.examly.springapp.model.Transaction;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
+
+    List<Transaction> findByUserId(int userId);
+}
+
+
+///////////UserRepo
+
+
+package com.examly.springapp.repository;
+
+import com.examly.springapp.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Integer> {
+}
+
+//////////TransactionService
+
+
+package com.examly.springapp.service;
+
+import com.examly.springapp.model.Transaction;
+import com.examly.springapp.model.User;
+import com.examly.springapp.repository.TransactionRepository;
+import com.examly.springapp.repository.UserRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class TransactionService {
+
+    
+    @Autowired
+     TransactionRepository transactionRepository;
+
+    @Autowired
+    UserRepository userRepository;
+    
+
+    public Transaction createTransactionForUser(int userId, Transaction transaction) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user != null) {
+            transaction.setUser(user);
+            return transactionRepository.save(transaction);
+        }
+        return null;
+    }
+
+    public Transaction getTransactionById(int id) {
+        return transactionRepository.findById(id).orElse(null);
+    }
+
+    public List<Transaction> getTransactionsByUserId(int userId) {
+        return transactionRepository.findByUserId(userId);
+    }
+
+    public Transaction updateTransaction(int id, Transaction transaction) {
+        if (transactionRepository.existsById(id)) {
+            transaction.setId(id);
+            return transactionRepository.save(transaction);
+        }
+        return null;
+    }
+
+    public boolean deleteTransaction(int id) {
+        if (transactionRepository.existsById(id)) {
+            transactionRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+}
+
+
+////////////UserService
+
+
+
+package com.examly.springapp.service;
+
+import com.examly.springapp.model.User;
+import com.examly.springapp.repository.UserRepository;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserService {
+
+    
+    @Autowired
+    UserRepository userRepository;
+   
+
+    public User createUser(User user) {
+        return userRepository.save(user);
+    }
+
+    public Optional<User> getUserById(int id) {
+        return userRepository.findById(id);
+    }
+
+    public User updateUser(int id, User user) {
+        if (userRepository.existsById(id)) {
+            user.setId(id);
+            return userRepository.save(user);
+        }
+        return null;
+    }
+
+    public boolean deleteUser(int id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+}
+
+
+
+

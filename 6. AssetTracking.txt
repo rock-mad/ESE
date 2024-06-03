@@ -1,0 +1,400 @@
+////////////AssetController
+
+package com.examly.springapp.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.examly.springapp.model.Asset;
+import com.examly.springapp.service.AssetService;
+
+@RestController
+@RequestMapping("/assets")
+public class AssetController {
+    private final AssetService assetService;
+
+    @Autowired
+    public AssetController(AssetService assetService) {
+        this.assetService = assetService;
+    }
+
+    @PostMapping
+    public ResponseEntity<Asset> createAsset(@RequestBody Asset asset) {
+        Asset createdAsset = assetService.saveAsset(asset);
+        return new ResponseEntity<>(createdAsset, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Asset> getAssetById(@PathVariable int id) {
+        Asset asset = assetService.getAssetById(id);
+        if (asset == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(asset, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Asset> updateAsset(@PathVariable int id, @RequestBody Asset asset) {
+        Asset existingAsset = assetService.getAssetById(id);
+        if (existingAsset == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        existingAsset.setName(asset.getName());
+        existingAsset.setDescription(asset.getDescription());
+        existingAsset.setValue(asset.getValue());
+
+        Asset updatedAsset = assetService.saveAsset(existingAsset);
+        return new ResponseEntity<>(updatedAsset, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteAsset(@PathVariable int id) {
+        Asset asset = assetService.getAssetById(id);
+        if (asset == null) {
+            return new ResponseEntity<>("Asset not found with ID: " + id, HttpStatus.NOT_FOUND);
+        }
+        assetService.deleteAssetById(id);
+        return new ResponseEntity<>("Asset deleted successfully", HttpStatus.OK);
+    }
+}
+
+
+
+
+/////////////OwnerController
+
+
+package com.examly.springapp.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.examly.springapp.model.Owner;
+import com.examly.springapp.service.OwnerService;
+
+@RestController
+@RequestMapping("/owners")
+public class OwnerController {
+    private final OwnerService ownerService;
+
+    @Autowired
+    public OwnerController(OwnerService ownerService) {
+        this.ownerService = ownerService;
+    }
+
+    @PostMapping("/asset/{assetid}")
+    public ResponseEntity<Owner> mapOwnerToAsset(@PathVariable("assetid") int assetId, @RequestBody Owner owner) {
+        Owner mappedOwner = ownerService.saveOwner(owner);
+        return new ResponseEntity<>(mappedOwner, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Owner> getOwnerById(@PathVariable int id) {
+        Owner owner = ownerService.getOwnerById(id);
+        if (owner == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(owner, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Owner> updateOwner(@PathVariable int id, @RequestBody Owner owner) {
+        Owner existingOwner = ownerService.getOwnerById(id);
+        if (existingOwner == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        existingOwner.setName(owner.getName());
+        existingOwner.setEmail(owner.getEmail());
+        existingOwner.setAddress(owner.getAddress());
+
+        Owner updatedOwner = ownerService.saveOwner(existingOwner);
+        return new ResponseEntity<>(updatedOwner, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteOwner(@PathVariable int id) {
+        Owner owner = ownerService.getOwnerById(id);
+        if (owner == null) {
+            return new ResponseEntity<>("Owner not found with ID: " + id, HttpStatus.NOT_FOUND);
+        }
+        ownerService.deleteOwnerById(id);
+        return new ResponseEntity<>("Owner deleted successfully", HttpStatus.OK);
+    }
+}
+
+
+
+
+/////////////Asset
+
+
+
+package com.examly.springapp.model;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+@Entity
+public class Asset {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    private String name;
+    private String description;
+    private double value;
+
+    @OneToOne(mappedBy = "asset")
+    @JsonIgnore
+    private Owner owner;
+
+    public Asset() {}
+
+    public Asset(String name, String description, double value) {
+        this.name = name;
+        this.description = description;
+        this.value = value;
+    }
+
+    // Getters and setters
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public double getValue() {
+        return value;
+    }
+
+    public void setValue(double value) {
+        this.value = value;
+    }
+
+    public Owner getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Owner owner) {
+        this.owner = owner;
+    }
+}
+
+ 
+
+//////////////Owner
+
+
+
+package com.examly.springapp.model;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+
+@Entity
+public class Owner {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    private String name;
+    private String email;
+    private String address;
+
+    @OneToOne
+    @JoinColumn(name = "asset_id")
+    private Asset asset;
+
+    public Owner() {}
+
+    public Owner(String name, String email, String address) {
+        this.name = name;
+        this.email = email;
+        this.address = address;
+    }
+
+    // Getters and setters
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public Asset getAsset() {
+        return asset;
+    }
+
+    public void setAsset(Asset asset) {
+        this.asset = asset;
+    }
+}
+
+
+
+///////////////AssetRepo
+
+
+
+package com.examly.springapp.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.examly.springapp.model.Asset;
+
+public interface AssetRepository extends JpaRepository<Asset, Integer> {
+}
+
+
+////////////OwnerRepo
+
+
+package com.examly.springapp.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.examly.springapp.model.Owner;
+
+public interface OwnerRepository extends JpaRepository<Owner, Integer> {
+}
+
+
+
+/////////////AssetService
+
+
+package com.examly.springapp.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.examly.springapp.model.Asset;
+import com.examly.springapp.repository.AssetRepository;
+
+@Service
+public class AssetService {
+    private final AssetRepository assetRepository;
+
+    @Autowired
+    public AssetService(AssetRepository assetRepository) {
+        this.assetRepository = assetRepository;
+    }
+
+    public Asset saveAsset(Asset asset) {
+        return assetRepository.save(asset);
+    }
+
+    public Asset getAssetById(int id) {
+        return assetRepository.findById(id).orElse(null);
+    }
+
+    public void deleteAssetById(int id) {
+        assetRepository.deleteById(id);
+    }
+}
+
+
+
+/////////////OwnerService
+
+
+package com.examly.springapp.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.examly.springapp.model.Owner;
+import com.examly.springapp.repository.OwnerRepository;
+
+@Service
+public class OwnerService {
+    private final OwnerRepository ownerRepository;
+
+    @Autowired
+    public OwnerService(OwnerRepository ownerRepository) {
+        this.ownerRepository = ownerRepository;
+    }
+
+    public Owner saveOwner(Owner owner) {
+        return ownerRepository.save(owner);
+    }
+
+    public Owner getOwnerById(int id) {
+        return ownerRepository.findById(id).orElse(null);
+    }
+
+    public void deleteOwnerById(int id) {
+        ownerRepository.deleteById(id);
+    }
+}
+

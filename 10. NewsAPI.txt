@@ -1,0 +1,272 @@
+///////////AppConfig
+
+package com.examly.springapp.configuration;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration 
+public class AppConfig { 
+
+    @Bean 
+    public RestTemplate restTemplate() { 
+        return new RestTemplate();
+    }
+}
+
+
+//////////////NewsController
+
+
+package com.examly.springapp.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.examly.springapp.model.ApiResponse;
+import com.examly.springapp.service.NewsService;
+
+@RestController 
+public class NewsController { 
+
+    @Autowired 
+    private NewsService ns;
+
+    @GetMapping("/news/source/{source}") 
+    public ResponseEntity<ApiResponse> getNewsBySource(@PathVariable String source) { 
+        ApiResponse ar = ns.getNewsBySource(source);
+        if (ar == null || ar.getArticles() == null || ar.getArticles().length == 0) { 
+            return ResponseEntity.notFound().build();
+        } 
+        return ResponseEntity.ok(ar);
+    } 
+
+    @GetMapping("/news/country/{country}/category/{category}") 
+    public ResponseEntity<ApiResponse> getNewsByCountryAndCategory(@PathVariable String country, @PathVariable String category) { 
+        ApiResponse ar = ns.getNewsByCountryAndCategory(country, category);
+        if (ar == null || ar.getArticles() == null || ar.getArticles().length == 0) { 
+            return ResponseEntity.notFound().build();
+        } 
+        return ResponseEntity.ok(ar);
+    }
+
+    @GetMapping("/news/country/{country}/category/{category}/{pageNumber}/{pageSize}/{sortField}") 
+    public ResponseEntity<ApiResponse> getNewsByCountryCategoryWithPaginationAndSort(
+            @PathVariable String country, 
+            @PathVariable String category, 
+            @PathVariable int pageNumber, 
+            @PathVariable int pageSize, 
+            @PathVariable String sortField) { 
+
+        ApiResponse ar = ns.getNewsByCountryCategoryWithPaginationAndSort(country, category, pageNumber, pageSize, sortField);
+        if (ar == null || ar.getArticles() == null || ar.getArticles().length == 0) { 
+            return ResponseEntity.notFound().build();
+        } 
+        return ResponseEntity.ok(ar);
+    }
+}
+
+
+
+////////////ApiResponse
+
+
+package com.examly.springapp.model;
+
+public class ApiResponse {
+    private Article[] articles;
+
+    public ApiResponse() { }
+
+    public ApiResponse(Article[] articles) {
+        this.articles = articles;
+    }
+
+    public Article[] getArticles() {
+        return articles;
+    }
+
+    public void setArticles(Article[] articles) {
+        this.articles = articles;
+    }
+}
+
+
+
+/////////////Article
+
+
+package com.examly.springapp.model;
+
+import java.util.Date;
+
+public class Article {
+    private String author;
+    private String title;
+    private String description;
+    private String url;
+    private String urlToImage;
+    private Date publishedAt;
+    private String content;
+    private Source source;
+
+    public Article() { }
+
+    public Article(String author, String title, String description, String url, String urlToImage, Date publishedAt, String content, Source source) {
+        this.author = author;
+        this.title = title;
+        this.description = description;
+        this.url = url;
+        this.urlToImage = urlToImage;
+        this.publishedAt = publishedAt;
+        this.content = content;
+        this.source = source;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUrlToImage() {
+        return urlToImage;
+    }
+
+    public void setUrlToImage(String urlToImage) {
+        this.urlToImage = urlToImage;
+    }
+
+    public Date getPublishedAt() {
+        return publishedAt;
+    }
+
+    public void setPublishedAt(Date publishedAt) {
+        this.publishedAt = publishedAt;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public Source getSource() {
+        return source;
+    }
+
+    public void setSource(Source source) {
+        this.source = source;
+    }
+}
+
+
+///////////Source
+
+
+package com.examly.springapp.model;
+
+public class Source {
+    private String id;
+    private String name;
+
+    public Source() { }
+
+    public Source(String id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+
+
+
+/////////////NewsService
+
+
+package com.examly.springapp.service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.examly.springapp.model.ApiResponse;
+
+@Service 
+public class NewsService { 
+
+    @Value("${newsapi.apikey}") 
+    private String apiKey;
+
+    private final RestTemplate restTemplate;
+
+    public NewsService(RestTemplate restTemplate) { 
+        this.restTemplate = restTemplate;
+    } 
+
+    public ApiResponse getNewsBySource(String source) { 
+        String url = String.format("https://newsapi.org/v2/top-headlines?sources=%s&apiKey=%s", source, apiKey);
+        ResponseEntity<ApiResponse> response = restTemplate.getForEntity(url, ApiResponse.class);
+        return response.getBody();
+    } 
+
+    public ApiResponse getNewsByCountryAndCategory(String country, String category) { 
+        String url = String.format("https://newsapi.org/v2/top-headlines?country=%s&category=%s&apiKey=%s", country, category, apiKey);
+        ResponseEntity<ApiResponse> response = restTemplate.getForEntity(url, ApiResponse.class);
+        return response.getBody();
+    } 
+
+    public ApiResponse getNewsByCountryCategoryWithPaginationAndSort(String country, String category, int pageNumber, int pageSize, String sortField) { 
+        String url = String.format("https://newsapi.org/v2/top-headlines?country=%s&category=%s&apiKey=%s", country, category, apiKey);
+        ResponseEntity<ApiResponse> response = restTemplate.getForEntity(url, ApiResponse.class);
+        return response.getBody();
+    } 
+}

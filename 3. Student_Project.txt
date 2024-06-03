@@ -1,0 +1,232 @@
+///////////StudentController
+
+package com.examly.springapp.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.examly.springapp.model.Student;
+import com.examly.springapp.service.StudentService;
+
+@RestController
+public class StudentController {
+    @Autowired
+    StudentService ss;
+
+    @PostMapping("/student")
+    public ResponseEntity<Student> adddata(@RequestBody Student s) {
+        try {
+            return new ResponseEntity<>(ss.create(s), HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/student")
+    public ResponseEntity<List<Student>> showdetails() {
+        try {
+            return new ResponseEntity<>(ss.getAll(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(ss.getAll(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/student/{id}")
+    public ResponseEntity<Student> getById(@PathVariable int id) {
+        Student obj = ss.getbyid(id);
+        if (obj != null)
+            return new ResponseEntity<>(obj, HttpStatus.OK);
+        else
+            return new ResponseEntity<>(obj, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PutMapping("/student/{id}")
+    public ResponseEntity<Student> putMethod(@PathVariable("id") int id, @RequestBody Student s) {
+        if (ss.updateDetails(id, s) == true) {
+            return new ResponseEntity<>(s, HttpStatus.OK);
+        }
+        return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @DeleteMapping("/student/{id}")
+    public ResponseEntity<?> delete(@PathVariable("id") int id) {
+        if (ss.delete(id) == true) {
+            return new ResponseEntity<>("Student deleted successfully", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("Student not found with ID: " + id, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @GetMapping("/student/sortedByName")
+    public ResponseEntity<List<Student>> g() {
+        List<Student> students = ss.sortbyname();
+        return ResponseEntity.ok(students);
+    }
+
+    @GetMapping("/student/ageRange/{minAge}/{maxAge}")
+    public ResponseEntity<List<Student>> getStudentsByAgeRange(@PathVariable int minAge, @PathVariable int maxAge) {
+        List<Student> students = ss.getStudentsByAgeRange(minAge, maxAge);
+        return ResponseEntity.ok(students);
+    }
+}
+
+
+
+/////////////Student
+
+
+package com.examly.springapp.model;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+
+@Entity
+public class Student {
+    @Id
+    int id;
+    String name, address, department;
+    int age;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public Student(int id, String name, String address, String department, int age) {
+        this.id = id;
+        this.name = name;
+        this.address = address;
+        this.department = department;
+        this.age = age;
+    }
+
+    public Student() {
+    }
+}
+
+
+
+
+//////////////StudentRepo
+
+
+package com.examly.springapp.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.examly.springapp.model.Student;
+
+public interface StudentRepository extends JpaRepository<Student, Integer> {
+}
+
+
+
+/////////////StudentService
+
+
+
+package com.examly.springapp.service;
+
+import java.util.Comparator;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.examly.springapp.model.Student;
+import com.examly.springapp.repository.StudentRepository;
+
+@Service
+public class StudentService {
+    @Autowired
+    StudentRepository sr;
+
+    public Student create(Student s) {
+        return sr.save(s);
+    }
+
+    public List<Student> getAll() {
+        return sr.findAll();
+    }
+
+    public Student getbyid(int n) {
+        return sr.findById(n).orElse(null);
+    }
+
+    public boolean updateDetails(int id, Student s) {
+        if (this.getbyid(id) == null) {
+            return false;
+        }
+        try {
+            sr.save(s);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean delete(int id) {
+        if (this.getbyid(id) == null) {
+            return false;
+        }
+        sr.deleteById(id);
+        return true;
+    }
+
+    public List<Student> sortbyname() {
+        List<Student> students = sr.findAll();
+        students.sort(Comparator.comparing(Student::getName));
+        return students;
+    }
+
+    public List<Student> getStudentsByAgeRange(int minAge, int maxAge) {
+        List<Student> students = sr.findAll();
+        students.removeIf(s -> s.getAge() < minAge || s.getAge() > maxAge);
+        students.sort(Comparator.comparing(Student::getAge));
+        return students;
+    }
+}

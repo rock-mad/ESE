@@ -1,0 +1,472 @@
+/////////////DeviceController
+
+
+package com.examly.springapp.controller;
+
+import com.examly.springapp.model.Device;
+import com.examly.springapp.service.DeviceService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+public class DeviceController {
+
+    @Autowired
+    private DeviceService deviceService;
+
+    @PostMapping("/devices/user/{userId}")
+    public ResponseEntity<Device> createDevice(@PathVariable int userId, @RequestBody Device device) {
+        Device newDevice = deviceService.createDevice(userId, device);
+        return new ResponseEntity<>(newDevice, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/devices")
+    public ResponseEntity<List<Device>> getAllDevices() {
+        List<Device> devices = deviceService.getAllDevices();
+        return new ResponseEntity<>(devices, HttpStatus.OK);
+    }
+
+    @GetMapping("/devices/{id}")
+    public ResponseEntity<Device> getDeviceById(@PathVariable int id) {
+        Device device = deviceService.getDeviceById(id);
+        if (device == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(device, HttpStatus.OK);
+    }
+
+    @GetMapping("/devices/user/{userId}")
+    public ResponseEntity<List<Device>> getDevicesByUserId(@PathVariable int userId) {
+        List<Device> devices = deviceService.getDevicesByUserId(userId);
+        return new ResponseEntity<>(devices, HttpStatus.OK);
+    }
+
+    @PutMapping("/devices/{id}")
+    public ResponseEntity<Device> updateDevice(@PathVariable int id, @RequestBody Device updatedDevice) {
+        Device device = deviceService.updateDevice(id, updatedDevice);
+        if (device == null) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(device, HttpStatus.OK);
+    }
+
+    @PutMapping("/devices/{id}/toggle")
+    public ResponseEntity<String> toggleDeviceStatus(@PathVariable int id) {
+        boolean toggled = deviceService.toggleDeviceStatus(id);
+        if (toggled) {
+            return new ResponseEntity<>("Device status toggled successfully", HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @PutMapping("/devices/{id}/settings")
+    public ResponseEntity<Device> updateDeviceSettings(@PathVariable int id, @RequestBody Device updatedDevice) {
+        Device device = deviceService.updateDeviceSettings(id, updatedDevice);
+        if (device == null) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(device, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/devices/{id}")
+    public ResponseEntity<String> deleteDevice(@PathVariable int id) {
+        
+            return new ResponseEntity<>("Device deleted successfully", HttpStatus.OK);
+       
+    }
+}
+
+
+
+///////////UserController
+
+
+package com.examly.springapp.controller;
+
+import com.examly.springapp.model.User;
+import com.examly.springapp.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/users")
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User newUser = userService.createUser(user);
+        return new ResponseEntity<>(newUser, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        return new ResponseEntity<>(users, HttpStatus.OK);
+    }
+
+    @GetMapping("/users/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable int id) {
+        User user = userService.getUserById(id);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable int id, @RequestBody User updatedUser) {
+        User user = userService.updateUser(id, updatedUser);
+        if (user == null) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable int id) {
+        boolean deleted = userService.deleteUser(id);
+        if (deleted) {
+            return new ResponseEntity<>("User deleted successfully", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("User not found with ID: " + id, HttpStatus.NOT_FOUND);
+    }
+}
+
+
+
+////////////Device
+
+
+package com.examly.springapp.model;
+
+import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import java.util.Map;
+
+@Entity
+public class Device {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String name;
+    private String type;
+    private boolean status;
+
+    @ElementCollection
+    private Map<String, String> settings;
+
+    @ManyToOne
+    @JsonIgnore
+    private User user;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
+    public Map<String, String> getSettings() {
+        return settings;
+    }
+
+    public void setSettings(Map<String, String> settings) {
+        this.settings = settings;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+}
+
+
+/////////////User
+
+
+
+
+package com.examly.springapp.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
+import java.util.List;
+
+@Entity
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String name;
+    private String email;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Device> devices;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public List<Device> getDevices() {
+        return devices;
+    }
+
+    public void setDevices(List<Device> devices) {
+        this.devices = devices;
+    }
+
+    
+}
+
+
+
+/////////////DeviceRepo
+
+package com.examly.springapp.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.examly.springapp.model.Device;
+
+public interface DeviceRepository extends JpaRepository<Device,Integer>{
+
+}
+
+
+
+////////////USerRepo
+
+
+package com.examly.springapp.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.examly.springapp.model.User;
+
+public interface UserRepository extends JpaRepository<User,Integer>{
+
+}
+
+
+
+///////////Deviceervice
+
+
+package com.examly.springapp.service;
+
+import com.examly.springapp.model.Device;
+import com.examly.springapp.model.User;
+import com.examly.springapp.repository.DeviceRepository;
+import com.examly.springapp.repository.UserRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class DeviceService {
+
+    @Autowired
+    private DeviceRepository deviceRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public Device createDevice(int userId, Device device) {
+
+        User obj = userRepository.findById(userId).orElse(null);
+
+        if(obj!=null)
+        {
+            device.setUser(obj);
+            obj.getDevices().add(device);
+            userRepository.save(obj);
+            deviceRepository.save(device);
+            return device;
+        }
+        return null;
+    }
+
+    public List<Device> getAllDevices() {
+        return deviceRepository.findAll();
+    }
+
+    public Device getDeviceById(int id) {
+
+        return deviceRepository.findById(id).orElse(null);
+    }
+
+    public List<Device> getDevicesByUserId(int userId) {
+        // Retrieve devices by user ID
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            return user.getDevices();
+        }
+        return Collections.emptyList(); // Return empty list if user not found or has no devices
+    }
+    
+
+    public Device updateDevice(int id, Device updatedDevice) {
+        Device device = deviceRepository.findById(id).orElse(null);
+        if (device != null) {
+            device.setName(updatedDevice.getName());
+            device.setType(updatedDevice.getType());
+            device.setStatus(updatedDevice.isStatus());
+            device.setSettings(updatedDevice.getSettings());
+            return deviceRepository.save(device);
+        }
+        return null;
+    }
+
+    public boolean toggleDeviceStatus(int id) {
+        Device device = deviceRepository.findById(id).orElse(null);
+        if (device != null) {
+            device.setStatus(!device.isStatus());
+            deviceRepository.save(device);
+            return true;
+        }
+        return false;
+    }
+
+    public Device updateDeviceSettings(int id, Device updatedDevice) {
+        Device device = deviceRepository.findById(id).orElse(null);
+        if (device != null) {
+            device.setSettings(updatedDevice.getSettings());
+            return deviceRepository.save(device);
+        }
+        return null;
+    }
+
+    public boolean deleteDevice(int id) {
+        if (deviceRepository.existsById(id)) {
+            deviceRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+}
+
+
+//////////UserService
+
+
+
+
+package com.examly.springapp.service;
+
+import com.examly.springapp.model.User;
+import com.examly.springapp.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public User createUser(User user) {
+        return userRepository.save(user);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User getUserById(int id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    public User updateUser(int id, User updatedUser) {
+        User user = userRepository.findById(id).orElse(null);
+        if (user != null) {
+            user.setName(updatedUser.getName());
+            user.setEmail(updatedUser.getEmail());
+            return userRepository.save(user);
+        }
+        return null;
+    }
+
+    public boolean deleteUser(int id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+}

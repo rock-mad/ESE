@@ -1,0 +1,317 @@
+////////////MemberController
+
+package com.examly.springapp.controller;
+
+import com.examly.springapp.model.Member;
+import com.examly.springapp.service.MemberService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/members")
+public class MemberController {
+    @Autowired
+    private MemberService memberService;
+
+    @PostMapping
+    public ResponseEntity<Member> addMember(@RequestBody Member member) {
+        Member newMember = memberService.addMember(member);
+        return new ResponseEntity<>(newMember, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Member> getMemberById(@PathVariable("id") int id) {
+        Member member = memberService.getMemberById(id);
+        return new ResponseEntity<>(member, HttpStatus.OK);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Member>> getAllMembers() {
+        List<Member> members = memberService.getAllMembers();
+        return new ResponseEntity<>(members, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Member> updateMember(@PathVariable("id") int id, @RequestBody Member member) {
+        if (member.getId() != id) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        Member updatedMember = memberService.updateMember(member);
+        return new ResponseEntity<>(updatedMember, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteMember(@PathVariable("id") int id) {
+        memberService.deleteMember(id);
+        return new ResponseEntity<>("The Member Deleted Successfully", HttpStatus.OK);
+    }
+}
+
+
+///////////MemberShipController
+
+package com.examly.springapp.controller;
+
+import com.examly.springapp.model.MembershipCard;
+import com.examly.springapp.service.MembershipService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/membership-cards")
+public class MembershipCardController {
+    @Autowired
+    private MembershipService membershipService;
+
+    @PostMapping("/member/{id}")
+    public ResponseEntity<MembershipCard> addMembership(@PathVariable("id") int memberId, @RequestBody MembershipCard membershipCard) {
+        MembershipCard newMembership = membershipService.addMembership(membershipCard);
+        return new ResponseEntity<>(newMembership, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<MembershipCard> getMembershipById(@PathVariable("id") int id) {
+        MembershipCard membershipCard = membershipService.getMembershipById(id);
+        return new ResponseEntity<>(membershipCard, HttpStatus.OK);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<MembershipCard> updateMembership(@PathVariable("id") int id, @RequestBody MembershipCard membershipCard) {
+        if (membershipCard.getId() != id) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        MembershipCard updatedMembership = membershipService.updateMembership(membershipCard);
+        return new ResponseEntity<>(updatedMembership, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteMembership(@PathVariable("id") int id) {
+        membershipService.deleteMembership(id);
+        return new ResponseEntity<>("Membership Card Deleted Successfully", HttpStatus.OK);
+    }
+}
+
+
+
+//////////////Member
+
+
+package com.examly.springapp.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.persistence.*;
+
+@Entity
+public class Member {
+    @Id
+    private int id;
+    private String name;
+    private String email;
+
+    @OneToOne(mappedBy = "member")
+    @JsonIgnore
+    private MembershipCard membershipCard;
+
+    public Member() {}
+
+    public Member(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
+
+
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public MembershipCard getMembershipCard() {
+        return membershipCard;
+    }
+
+    public void setMembershipCard(MembershipCard membershipCard) {
+        this.membershipCard = membershipCard;
+    }
+}
+
+
+
+////////////Membership
+
+
+package com.examly.springapp.model;
+
+import javax.persistence.*;
+import java.time.LocalDate;
+
+@Entity
+public class MembershipCard {
+    @Id
+    private int id;
+    private String cardNumber;
+    private LocalDate expirationDate;
+
+    @OneToOne
+    @JoinColumn(name = "member_id")
+    private Member member;
+
+    public MembershipCard() {}
+
+    public MembershipCard(String cardNumber, LocalDate expirationDate) {
+        this.cardNumber = cardNumber;
+        this.expirationDate = expirationDate;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getCardNumber() {
+        return cardNumber;
+    }
+
+    public void setCardNumber(String cardNumber) {
+        this.cardNumber = cardNumber;
+    }
+
+    public LocalDate getExpirationDate() {
+        return expirationDate;
+    }
+
+    public void setExpirationDate(LocalDate expirationDate) {
+        this.expirationDate = expirationDate;
+    }
+
+    public Member getMember() {
+        return member;
+    }
+
+    public void setMember(Member member) {
+        this.member = member;
+    }
+}
+
+
+
+////////////MemberRepo
+
+
+
+package com.examly.springapp.repository;
+
+import com.examly.springapp.model.Member;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface MemberRepo extends JpaRepository<Member, Integer> {
+}
+
+
+
+///////////MembershipRepo
+
+
+package com.examly.springapp.repository;
+
+import com.examly.springapp.model.MembershipCard;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface MembershipRepo extends JpaRepository<MembershipCard, Integer> {
+}
+
+
+
+//////////////MemberService
+
+
+package com.examly.springapp.service;
+
+import com.examly.springapp.model.Member;
+import com.examly.springapp.repository.MemberRepo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class MemberService {
+    @Autowired
+    private MemberRepo memberRepo;
+
+    public Member addMember(Member member) {
+        return memberRepo.save(member);
+    }
+
+    public Member getMemberById(int id) {
+        return memberRepo.findById(id).orElse(null);
+    }
+
+    public List<Member> getAllMembers() {
+        return memberRepo.findAll();
+    }
+
+    public Member updateMember(Member member) {
+        return memberRepo.save(member);
+    }
+
+    public void deleteMember(int id) {
+        memberRepo.deleteById(id);
+    }
+}
+
+
+///////////MembershipService
+
+package com.examly.springapp.service;
+
+import com.examly.springapp.model.MembershipCard;
+import com.examly.springapp.repository.MembershipRepo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.Optional;
+
+@Service
+public class MembershipService {
+    @Autowired
+    private MembershipRepo membershipRepo;
+
+    public MembershipCard addMembership(MembershipCard membershipCard) {
+        return membershipRepo.save(membershipCard);
+    }
+
+    public MembershipCard getMembershipById(int id) {
+        Optional<MembershipCard> optionalMembershipCard = membershipRepo.findById(id);
+        return optionalMembershipCard.orElse(null);
+    }
+
+    public MembershipCard updateMembership(MembershipCard membershipCard) {
+        return membershipRepo.save(membershipCard);
+    }
+
+    public void deleteMembership(int id) {
+        membershipRepo.deleteById(id);
+    }
+}
